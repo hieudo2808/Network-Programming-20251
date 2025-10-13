@@ -1,6 +1,7 @@
 #pragma once
 
 #include <arpa/inet.h>
+
 #include "account.h"
 
 typedef struct {
@@ -8,7 +9,7 @@ typedef struct {
     int clientPort;
     Data *currentUser;
     char tempUsername[50];
-    int failedAttempts;
+    int loginFailedCount;
 } SessionData;
 
 typedef struct SessionList {
@@ -16,7 +17,7 @@ typedef struct SessionList {
     struct SessionList *next;
 } SessionList;
 
-SessionList* findSessionByAddr(SessionList **list, struct sockaddr_in *addr);
-SessionList* createSessionForAddr(SessionList **list, struct sockaddr_in *addr);
+SessionList *findSessionByAddr(SessionList **list, struct sockaddr_in *addr);
+SessionList *createSessionForAddr(SessionList **list, struct sockaddr_in *addr);
 void removeSessionByAddr(SessionList **list, struct sockaddr_in *addr);
 void freeAllSessions(SessionList *list);
