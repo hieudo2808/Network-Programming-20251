@@ -3,5 +3,5 @@
 #include <ctype.h>
 #include <string.h>
 
-int isAlphanumeric(const char *password);
-void encodePassword(const char *password, char *letters, char *digits);
+int isAlphanumeric(char password[]);
+void encodePassword(char password[], char *letters, char *digits);

@@ -1,4 +1,4 @@
-hust a1b2c3d4 hust@gmail.com https://hust.edu.vn 1
+hust hust123 hust@gmail.com https://hust.edu.vn 1
 soict soict123 vp@soict.hust.edu.vn https://soict.hust.edu.vn 0
 google google1234 gg123@gmail.com https://google.com 1
 admin admin1234 admin@example.com https://admin.example.com 1

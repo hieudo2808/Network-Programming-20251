@@ -30,7 +30,7 @@ SessionList* createSessionForAddr(SessionList **list, struct sockaddr_in *addr) 
     newSession->sessionData.clientPort = port;
     newSession->sessionData.currentUser = NULL;
     newSession->sessionData.tempUsername[0] = '\0';
-    newSession->sessionData.failedAttempts = 0;
+    newSession->sessionData.loginFailedCount = 0;
     newSession->next = *list;
     *list = newSession;
     
