@@ -1,0 +1,10 @@
+hust hust123 hust@gmail.com https://hust.edu.vn 1
+soict soict123 vp@soict.hust.edu.vn https://soict.hust.edu.vn 0
+google google1234 gg123@gmail.com https://google.com 1
+admin admin1234 admin@example.com https://admin.example.com 1
+user1 pass1 user1@mail.com https://user1.com 0
+testuser test123 test@domain.com https://test.domain.com 1
+john doe123 john.doe@gmail.com https://johndoe.me 0
+alice alice123 alice@example.com https://alice.dev 0
+bob bobsecure bob@securemail.com https://bobsite.net 0
+charlie charlie789 charlie@demo.com https://charliedemo.org 1
