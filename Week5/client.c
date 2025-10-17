@@ -30,10 +30,10 @@ int main(int argc, char *argv[]) {
 
     if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0)
     {
-        printf("Failed to connect to server");
+        perror("Failed to connect to server");
+        close(sockfd);
         return 1;
     }
-    
 
     while (1) {
         fgets(input, sizeof(input), stdin);
@@ -41,11 +41,21 @@ int main(int argc, char *argv[]) {
         
         if (strlen(input) == 0) break;
 
-        send(sockfd, input, strlen(input), 0);
+        if (send(sockfd, input, strlen(input), 0) < 0) {
+            perror("Send failed");
+            break;
+        }
 
-        int n = recv(sockfd, buffer, sizeof(buffer), 0);
+        int n = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
+        if (n <= 0) {
+            perror("Receive failed");
+            break;
+        }
+        
         buffer[n] = '\0';
         printf("%s\n", buffer);
+
+        if (strcmp(input, "bye") == 0) break;
     }
 
     close(sockfd);

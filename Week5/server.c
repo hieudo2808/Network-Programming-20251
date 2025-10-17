@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <signal.h>
 #include "FileHandler/fileprocess.h"
 #include "Validation/validation.h"
 #include "LinkedList/session.h"
@@ -11,6 +13,7 @@
 #include "ServerHandler/serverHandler.h"
 
 int main(int argc, char *argv[]) {
+    signal(SIGCHLD, SIG_IGN);
     if (argc != 2) {
         printf("Usage: ./server <Port>\n");
         return 1;
@@ -55,56 +58,77 @@ int main(int argc, char *argv[]) {
         connfd = accept(sockfd, (struct sockaddr*)&cliAddr, &len);
         if (connfd == -1)
         {
-            perror("Failed to establish connection\n");
+            perror("Failed to establish connection");
             continue;
         }
+
+        printf("Client connected from %s:%d\n", inet_ntoa(cliAddr.sin_addr), ntohs(cliAddr.sin_port));
+
+        pid_t pid = fork();
         
-        int n = recv(connfd, buffer, 1024, 0);
-        if (n < 0) {
-            perror("Failed to receive data");
+        if (pid < 0) {
+            perror("Fork failed");
             close(connfd);
             continue;
         }
-        buffer[n] = '\0';
+        
+        if (pid == 0) {
+            close(sockfd);
 
-        SessionList *session = findSessionByAddr(&sessions, &cliAddr);
-        if (!session) {
-            session = createSessionForAddr(&sessions, &cliAddr);
+            SessionList *session = findSessionByAddr(&sessions, &cliAddr);
             if (!session) {
-                char *errMsg = "Server error\n";
-                send(connfd, errMsg, strlen(errMsg), 0);
-                continue;
+                session = createSessionForAddr(&sessions, &cliAddr);
+                if (!session) {
+                    char *errMsg = "Server error";
+                    send(connfd, errMsg, strlen(errMsg), 0);
+                    close(connfd);
+                    exit(1);
+                }
             }
+
+            while (1) {
+                int n = recv(connfd, buffer, sizeof(buffer) - 1, 0);
+                if (n < 0) {
+                    perror("Failed to receive data");
+                    break;
+                }
+                buffer[n] = '\0';
+
+                char response[1024];
+                SessionData *sd = &session->sessionData;
+
+                if (sd->currentUser != NULL) {
+                    if (strcmp(buffer, "bye") == 0) {
+                        snprintf(response, sizeof(response), "Goodbye %s", sd->currentUser->username);
+                        send(connfd, response, strlen(response), 0);
+                        printf("User %s signed out\n", sd->currentUser->username);
+                        removeSessionByAddr(&sessions, &cliAddr);
+                        break;
+                    } 
+
+                    authenticatedUserHandler(sd, buffer, response, accounts);
+                    send(connfd, response, strlen(response), 0);
+                } 
+                else if (strlen(sd->tempUsername) > 0) {
+                    loginHandler(sd, accounts, buffer, response);
+                    send(connfd, response, strlen(response), 0);
+                } 
+                else {
+                    strcpy(sd->tempUsername, buffer);
+                    strcpy(response, "Insert password");
+                    send(connfd, response, strlen(response), 0);
+                }
+            }
+            
+            close(connfd);
+            printf("Client disconnected\n");
+            exit(0);
         }
-
-        char response[1024];
-        SessionData *sd = &session->sessionData;
-
-        if (sd->currentUser != NULL) {
-            if (strcmp(buffer, "bye") == 0) {
-                strcpy(response, "Goodbye");
-                send(connfd, response, strlen(response), 0);
-                printf("User %s signed out\n", sd->currentUser->username);
-                removeSessionByAddr(&sessions, &cliAddr);
-                continue;
-            } 
-
-            authenticatedUserHandler(sd, buffer, response, accounts);
-            send(connfd, response, strlen(response), 0);
-        } 
-        else if (strlen(sd->tempUsername) > 0) {
-            loginHandler(sd, accounts, buffer, response);
-            send(connfd, response, strlen(response), 0);
-        } 
-        else {
-            strcpy(sd->tempUsername, buffer);
-            strcpy(response, "Insert password");
-            send(connfd, response, strlen(response), 0);
-        }
+        
+        close(connfd);
     }
 
     close(sockfd);
-    close(connfd);
     saveAllData(accounts);
     freeAllList(accounts);
     freeAllSessions(sessions);
