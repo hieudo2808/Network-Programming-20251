@@ -54,8 +54,6 @@ int main(int argc, char *argv[]) {
         
         buffer[n] = '\0';
         printf("%s\n", buffer);
-
-        if (strcmp(input, "bye") == 0) break;
     }
 
     close(sockfd);
