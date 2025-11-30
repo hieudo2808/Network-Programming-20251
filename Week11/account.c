@@ -82,12 +82,49 @@ int increment_failed_attempts(Account* head, const char* username) {
     if (acc) {
         acc->failed_attempts++;
         if (acc->failed_attempts >= 3) {
-            acc->status = 0; // Lock the account
+            acc->status = 0;
             save_accounts(head);
-            return 1; // Account locked
+            return 1;
         }
     }
-    return 0; // Not locked yet
+    return 0;
+}
+
+int register_account(Account** head, const char* username, const char* password) {
+    if (find_account(*head, username) != NULL) {
+        return -1;
+    }
+
+    if (strlen(username) == 0 || strlen(username) >= MAX_USERNAME) {
+        return -2;
+    }
+    if (strlen(password) == 0 || strlen(password) >= MAX_PASSWORD) {
+        return -3;
+    }
+
+    Account* new_acc = (Account*)malloc(sizeof(Account));
+    if (!new_acc) {
+        return -4;
+    }
+
+    strcpy(new_acc->username, username);
+    strcpy(new_acc->password, password);
+    new_acc->status = 1;
+    new_acc->failed_attempts = 0;
+    new_acc->next = NULL;
+
+    if (*head == NULL) 
+        *head = new_acc;
+    else {
+        Account* curr = *head;
+        while (curr->next) 
+            curr = curr->next;
+
+        curr->next = new_acc;
+    }
+
+    save_accounts(*head);
+    return 0;
 }
 
 void free_accounts(Account* head) {

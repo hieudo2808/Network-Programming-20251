@@ -20,7 +20,6 @@ void log_auth(const char* event_type, const char* username, const char* ip, int 
     } else if (strcmp(event_type, "LOGOUT") == 0) {
         fprintf(log_file, "[%s] LOGOUT %s from %s:%d\n", timestamp, username, ip, port);
     } else {
-        // LOGIN event
         fprintf(log_file, "[%s] LOGIN %s from %s:%d %s\n", timestamp, username, ip, port, result);
     }
 

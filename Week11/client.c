@@ -10,35 +10,14 @@
 
 #define BUFFER_SIZE 1024
 
-int sockfd;
-int running = 1;
-
-void* receive_thread(void* arg) {
-    char buffer[BUFFER_SIZE];
-    
-    while (running) {
-        memset(buffer, 0, BUFFER_SIZE);
-        int bytes_received = recv(sockfd, buffer, BUFFER_SIZE - 1, 0);
-        
-        if (bytes_received <= 0) {
-            printf("Connection closed by server\n");
-            running = 0;
-            break;
-        }
-        
-        printf("%s", buffer);
-        fflush(stdout);
-    }
-    
-    return NULL;
-}
-
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s IPAddress PortNumber\n", argv[0]);
+        fprintf(stderr, "Usage: ./client IPAddress PortNumber\n");
         exit(EXIT_FAILURE);
     }
     
+    int sockfd;
+    char input[BUFFER_SIZE];
     char* server_ip = argv[1];
     int server_port = atoi(argv[2]);
     
@@ -47,14 +26,12 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
     
-    // Create socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
     
-    // Connect to server
     struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -71,53 +48,41 @@ int main(int argc, char* argv[]) {
     }
     
     printf("Connected to server %s:%d\n", server_ip, server_port);
-    
-    // Create thread for receiving messages
-    pthread_t recv_thread;
-    if (pthread_create(&recv_thread, NULL, receive_thread, NULL) != 0) {
-        perror("Thread creation failed");
-        exit(EXIT_FAILURE);
-    }
-    
-    // Main loop for sending messages
-    char input[BUFFER_SIZE];
-    while (running) {
+
+    while (1) {
+        char response[BUFFER_SIZE];
+        int bytes_received = recv(sockfd, response, BUFFER_SIZE - 1, 0);
+        if (bytes_received < 0) {
+            perror("Receive failed");
+            break;
+        }
+        response[bytes_received] = '\0';
+        printf("%s", response);
+
         if (fgets(input, BUFFER_SIZE, stdin) == NULL) {
             break;
         }
         
-        // Remove trailing newline
         input[strcspn(input, "\n")] = 0;
         
-        // Check if empty input
-        if (strlen(input) == 0) {
+        if (strlen(input) == 0)
             continue;
-        }
         
-        // Send to server
         strcat(input, "\n");
         if (send(sockfd, input, strlen(input), 0) < 0) {
             perror("Send failed");
             break;
         }
         
-        // Check if quit command
         char command[50];
         sscanf(input, "%s", command);
-        for (int i = 0; command[i]; i++) {
+        for (int i = 0; command[i]; i++) 
             command[i] = toupper(command[i]);
-        }
-        if (strcmp(command, "QUIT") == 0) {
-            sleep(1); // Give time to receive goodbye message
+        if (strcmp(command, "QUIT") == 0) 
             break;
-        }
+        
     }
     
-    running = 0;
-    close(sockfd);
-    pthread_join(recv_thread, NULL);
-    
-    printf("Disconnected from server\n");
-    
+    close(sockfd);    
     return 0;
 }
