@@ -1,0 +1,3 @@
+user1 password1 1
+test test123 0
+hieudo hieudo831 1
